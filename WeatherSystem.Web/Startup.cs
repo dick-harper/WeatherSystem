@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace WeatherSystem.Web
 {
@@ -18,12 +19,31 @@ namespace WeatherSystem.Web
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILogger<Startup> logger)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.Use(next =>
+            {
+                return async context =>
+                {
+                    logger.LogInformation("Request incoming");
+                    if (context.Request.Path.StartsWithSegments("/"))
+                    {
+                        await context.Response.WriteAsync("Hit!");
+                        logger.LogInformation("Request handled");
+                        logger.LogInformation("Response outgoing");
+                    }
+                    else
+                    {
+                        await next(context);
+                    }
+                    
+                };
+            });
 
             app.Run(async (context) =>
             {
